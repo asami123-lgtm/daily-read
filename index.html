@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Daily Read">
+<meta name="theme-color" content="#ffffff">
+<title>Daily Read</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff;--bg2:#f5f5f3;--bg3:#eeecea;
+  --text:#1a1a1a;--text2:#555;--text3:#999;
+  --border:#e0dedd;--accent:#2563eb;--accent-bg:#eff6ff;--accent-text:#1d4ed8;
+  --green:#16a34a;--green-bg:#f0fdf4;--green-text:#15803d;
+  --done-bg:#fef9c3;--done-text:#854d0e;
+  --radius:14px;--radius-sm:8px;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#1c1c1e;--bg2:#2c2c2e;--bg3:#3a3a3c;--text:#f2f2f7;--text2:#aeaeb2;--text3:#636366;--border:#3a3a3c;--accent:#60a5fa;--accent-bg:#1e3a5f;--accent-text:#93c5fd;--green:#4ade80;--green-bg:#14532d;--green-text:#86efac;--done-bg:#422006;--done-text:#fcd34d;}
+}
+html,body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;font-size:16px;line-height:1.6;}
+#app{max-width:430px;margin:0 auto;height:100%;height:-webkit-fill-available;display:flex;flex-direction:column;}
+header{padding:max(16px,env(safe-area-inset-top)) 20px 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.logo{font-size:18px;font-weight:600;letter-spacing:-0.3px;}.logo span{color:var(--accent);}
+.streak{font-size:12px;color:var(--text3);background:var(--bg2);padding:4px 10px;border-radius:20px;}
+.level-bar{display:flex;gap:8px;padding:14px 20px 0;flex-shrink:0;}
+.lv-btn{flex:1;padding:7px 0;border:1px solid var(--border);background:var(--bg);color:var(--text2);border-radius:20px;font-size:13px;cursor:pointer;transition:all .2s;}
+.lv-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+/* Login screen */
+#login-view{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:24px;padding:40px 20px;text-align:center;}
+.login-logo{font-size:48px;}
+.login-title{font-size:22px;font-weight:600;}
+.login-sub{font-size:14px;color:var(--text2);line-height:1.6;}
+.btn-google{display:flex;align-items:center;gap:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 24px;font-size:15px;font-weight:500;cursor:pointer;color:var(--text);}
+.btn-google svg{width:20px;height:20px;}
+
+.card{margin:16px 20px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:20px;}
+.card-meta{font-size:11px;color:var(--text3);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.hanamaru{font-size:18px;display:none;}.hanamaru.show{display:inline;}
+.card-tags{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.tag-level{font-size:11px;padding:3px 10px;border-radius:20px;background:var(--green-bg);color:var(--green-text);}
+.tag-topic{font-size:11px;padding:3px 10px;border-radius:20px;background:var(--accent-bg);color:var(--accent-text);}
+.tag-done{font-size:11px;padding:3px 10px;border-radius:20px;background:var(--done-bg);color:var(--done-text);display:none;}
+.tag-done.show{display:inline;}
+.word-count{font-size:11px;color:var(--text3);}
+.card h2{font-size:19px;font-weight:600;line-height:1.35;margin-bottom:16px;letter-spacing:-0.2px;}
+.body-text{font-size:15px;line-height:1.95;color:var(--text);margin-bottom:12px;}
+.divider{border:none;border-top:0.5px solid var(--border);margin:16px 0;}
+.insight-box{background:var(--bg2);border-left:3px solid var(--accent);padding:12px 14px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:16px;}
+.insight-label{font-size:10px;font-weight:600;color:var(--accent-text);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
+.insight-text{font-size:13px;line-height:1.65;color:var(--text);}
+.vocab-title{font-size:11px;font-weight:600;color:var(--text3);margin-bottom:10px;letter-spacing:.04em;text-transform:uppercase;}
+.vocab-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.vocab-item{background:var(--bg2);border-radius:var(--radius-sm);padding:8px 12px;}
+.vocab-word{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px;}
+.vocab-jp{font-size:11px;color:var(--text2);}
+#init-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:16px;color:var(--text3);}
+.spinner{width:32px;height:32px;border:2.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-msg{font-size:14px;}
+.bottom-bar{padding:12px 20px;padding-bottom:max(16px,env(safe-area-inset-bottom));display:flex;gap:8px;background:var(--bg);border-top:0.5px solid var(--border);flex-shrink:0;}
+.btn-next{flex:1;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);padding:13px;font-size:14px;font-weight:500;cursor:pointer;transition:opacity .2s;white-space:nowrap;}
+.btn-next:active{opacity:.8;}.btn-next:disabled{opacity:.4;cursor:default;}
+.btn-done{flex:1;background:var(--done-bg);color:var(--done-text);border:none;border-radius:var(--radius-sm);padding:13px;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;}
+.btn-done.completed{opacity:.5;cursor:default;}
+.btn-icon{background:var(--bg2);color:var(--text2);border:none;border-radius:var(--radius-sm);padding:13px 15px;font-size:17px;cursor:pointer;}
+#celebrate{position:fixed;inset:0;pointer-events:none;z-index:99;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s;}
+#celebrate.show{opacity:1;}
+.celebrate-inner{font-size:80px;animation:pop .4s cubic-bezier(.36,1.6,.48,1) forwards;}
+@keyframes pop{0%{transform:scale(0) rotate(-20deg)}60%{transform:scale(1.2) rotate(8deg)}100%{transform:scale(1) rotate(0deg)}}
+.panel{position:fixed;inset:0;background:var(--bg);z-index:10;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s ease;}
+.panel.open{transform:translateY(0);}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:20px;border-bottom:0.5px solid var(--border);}
+.panel-title{font-size:17px;font-weight:600;}
+.btn-close{background:var(--bg2);border:none;border-radius:20px;padding:6px 14px;font-size:14px;color:var(--text2);cursor:pointer;}
+.panel-body{overflow-y:auto;flex:1;padding:16px 20px;}
+.history-item{padding:14px 0;border-bottom:0.5px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:8px;}
+.history-item:last-child{border-bottom:none;}
+.h-hana{font-size:16px;min-width:20px;}
+.h-info .h-title{font-size:14px;font-weight:500;margin-bottom:3px;}
+.h-info .h-meta{font-size:12px;color:var(--text3);}
+.empty-state{text-align:center;color:var(--text3);font-size:14px;margin-top:60px;}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.cal-nav button{background:var(--bg2);border:none;border-radius:var(--radius-sm);padding:6px 14px;font-size:16px;color:var(--text);cursor:pointer;}
+.cal-month{font-size:16px;font-weight:600;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal-dow{text-align:center;font-size:11px;color:var(--text3);padding:4px 0;font-weight:500;}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:13px;color:var(--text2);}
+.cal-day.read{background:var(--accent);color:#fff;font-weight:500;cursor:pointer;}
+.cal-day.read-partial{background:var(--bg3);cursor:pointer;}
+.cal-day.today{border:1.5px solid var(--accent);color:var(--accent);font-weight:500;}
+.cal-day.today.read{border:none;}.cal-day.empty{opacity:0;}
+.cal-legend{display:flex;align-items:center;gap:16px;margin-top:14px;font-size:12px;color:var(--text3);}
+.leg-item{display:flex;align-items:center;gap:6px;}
+.leg-dot{width:10px;height:10px;border-radius:50%;}
+.cal-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:20px;}
+.stat-card{background:var(--bg2);border-radius:var(--radius-sm);padding:12px;text-align:center;}
+.stat-num{font-size:22px;font-weight:600;color:var(--accent);}
+.stat-label{font-size:11px;color:var(--text3);margin-top:2px;}
+.stat-wide{grid-column:1/-1;}
+.user-info{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:8px;}
+.btn-logout{font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;text-decoration:underline;}
+.save-status{font-size:10px;color:var(--text3);text-align:center;padding:2px 0;flex-shrink:0;min-height:18px;}
+.hidden{display:none!important;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">Daily<span>Read</span></div>
+    <div class="streak" id="streak-badge">🔥 0日連続</div>
+  </header>
+  <div class="level-bar">
+    <button class="lv-btn active" data-lv="A1" onclick="setLevel('A1')">A1</button>
+    <button class="lv-btn" data-lv="A2" onclick="setLevel('A2')">A2</button>
+    <button class="lv-btn" data-lv="B1" onclick="setLevel('B1')">B1</button>
+  </div>
+
+  <div id="init-loading"><div class="spinner"></div><div class="loading-msg">読み込み中...</div></div>
+
+  <div id="login-view" class="hidden">
+    <div class="login-logo">📖</div>
+    <div class="login-title">Daily Read</div>
+    <div class="login-sub">毎日1記事、英語を読もう。<br>Googleアカウントでログインして<br>学習記録を保存できます。</div>
+    <button class="btn-google" onclick="signInWithGoogle()">
+      <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Googleでログイン
+    </button>
+  </div>
+
+  <div id="article-view" class="hidden" style="flex:1;overflow-y:auto;">
+    <div class="card">
+      <div class="card-meta"><span id="card-date"></span><span class="hanamaru" id="hanamaru">🌸</span></div>
+      <div class="card-tags">
+        <span class="tag-level" id="tag-level"></span>
+        <span class="tag-topic" id="tag-topic"></span>
+        <span class="tag-done" id="tag-done">✅ 読了</span>
+        <span class="word-count" id="word-count"></span>
+      </div>
+      <h2 id="article-title"></h2>
+      <p class="body-text" id="article-p1"></p>
+      <p class="body-text" id="article-p2"></p>
+      <hr class="divider">
+      <div class="insight-box">
+        <div class="insight-label">One New Insight</div>
+        <div class="insight-text" id="article-insight"></div>
+      </div>
+      <hr class="divider">
+      <div class="vocab-title">Key Vocabulary</div>
+      <div class="vocab-grid" id="vocab-grid"></div>
+      <hr class="divider">
+      <div class="user-info">
+        <span id="user-email"></span>
+        <button class="btn-logout" onclick="signOut()">ログアウト</button>
+      </div>
+    </div>
+  </div>
+  <div class="save-status" id="save-status"></div>
+  <div class="bottom-bar">
+    <button class="btn-icon" onclick="toggleCalendar()">📅</button>
+    <button class="btn-icon" onclick="toggleHistory()">📚</button>
+    <button class="btn-done" id="btn-done" onclick="markDone()">🌸 読了！</button>
+    <button class="btn-next" id="btn-next" onclick="nextArticle()">✨ 次の記事</button>
+  </div>
+</div>
+
+<div id="celebrate"><div class="celebrate-inner">🌸</div></div>
+
+<div id="cal-panel" class="panel">
+  <div class="panel-header">
+    <div class="panel-title">📅 読んだ日</div>
+    <button class="btn-close" onclick="toggleCalendar()">閉じる</button>
+  </div>
+  <div class="panel-body">
+    <div class="cal-nav">
+      <button onclick="calMove(-1)">‹</button>
+      <div class="cal-month" id="cal-month"></div>
+      <button onclick="calMove(1)">›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-legend">
+      <div class="leg-item"><div class="leg-dot" style="background:var(--accent)"></div><span>読了した日</span></div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--bg3);border:1px solid var(--border)"></div><span>記事を開いた日</span></div>
+    </div>
+    <div class="cal-stats" id="cal-stats"></div>
+  </div>
+</div>
+
+<div id="hist-panel" class="panel">
+  <div class="panel-header">
+    <div class="panel-title">📚 読んだ記事</div>
+    <button class="btn-close" onclick="toggleHistory()">閉じる</button>
+  </div>
+  <div class="panel-body" id="history-list"></div>
+</div>
+
+<script>
+// ===== ARTICLES =====
+const ARTICLES = {
+  A1: [
+    // Mindfulness & Psychology
+    {topic:"マインドフルネス・心理学",title:"Take a Deep Breath",p1:"Are you feeling stressed? Try this. Stop what you are doing. Take a slow, deep breath. Breathe in for four seconds. Then breathe out for four seconds. Do this three times.",p2:"You will feel calmer. This is called deep breathing. It helps your brain slow down. You can do it anywhere. Try it now!",insight:"Three deep breaths can help your brain feel calm in less than one minute.",vocab:[{word:"stressed",jp:"ストレスを感じている"},{word:"breath",jp:"息、呼吸"},{word:"calm",jp:"落ち着いた"},{word:"breathe",jp:"息をする"}]},
+    {topic:"マインドフルネス・心理学",title:"Smile More",p1:"Did you know? Smiling is good for you. When you smile, your brain feels happy. This is true even when you are not happy. A small smile can change your mood.",p2:"Try this today. Look in a mirror. Smile for ten seconds. You may start to feel better. Smiling is free and easy. Do it often!",insight:"Smiling for just ten seconds can help your brain feel a little happier.",vocab:[{word:"smile",jp:"笑顔、微笑む"},{word:"mood",jp:"気分"},{word:"mirror",jp:"鏡"},{word:"often",jp:"よく、しばしば"}]},
+    {topic:"マインドフルネス・心理学",title:"Sleep Is Very Important",p1:"Your brain needs sleep. When you sleep, your brain cleans itself. It removes bad things. It also saves what you learned that day. Eight hours of sleep is good for adults.",p2:"Without enough sleep, you feel tired. You cannot think well. You may feel sad or angry. Try to go to bed at the same time every night. Good sleep makes a better day.",insight:"Going to bed at the same time every night helps your brain sleep better.",vocab:[{word:"remove",jp:"取り除く"},{word:"adult",jp:"大人"},{word:"enough",jp:"十分な"},{word:"tired",jp:"疲れた"}]},
+    // Music & Piano
+    {topic:"ピアノ・音楽・脳",title:"Music Makes You Happy",p1:"Music is powerful. When you listen to a song you love, your brain makes a chemical called dopamine. Dopamine makes you feel happy. This happens in just a few seconds.",p2:"Fast music gives you energy. Slow music helps you relax. You can use music to change your mood. Try listening to your favorite song right now!",insight:"Listening to your favorite music for just a few minutes can lift your mood.",vocab:[{word:"powerful",jp:"強力な"},{word:"chemical",jp:"化学物質"},{word:"dopamine",jp:"ドーパミン"},{word:"relax",jp:"リラックスする"}]},
+    {topic:"ピアノ・音楽・脳",title:"Learning Piano Is Good for Your Brain",p1:"Playing piano is not just fun. It is good for your brain. When you play, you use both hands. Your left brain and right brain work together. This makes your brain stronger.",p2:"You do not need to be young to start. Adults can learn piano too. Even fifteen minutes of practice a day is helpful. Try it and see!",insight:"Playing piano for fifteen minutes a day can make your brain work better.",vocab:[{word:"practice",jp:"練習"},{word:"helpful",jp:"役に立つ"},{word:"adult",jp:"大人"},{word:"together",jp:"一緒に"}]},
+    {topic:"ピアノ・音楽・脳",title:"Singing Is Good for You",p1:"Do you like to sing? Singing is very good for your body and mind. When you sing, you breathe deeply. This gives your body more oxygen. You also feel less stressed.",p2:"You do not need a good voice to sing. Sing in the shower. Sing in your car. Sing any time you feel sad. Singing makes you feel better.",insight:"Singing deeply, even alone, helps your body relax and feel less stressed.",vocab:[{word:"oxygen",jp:"酸素"},{word:"voice",jp:"声"},{word:"shower",jp:"シャワー"},{word:"deeply",jp:"深く"}]},
+    // Lifestyle & Time
+    {topic:"ライフスタイル・時間管理",title:"Make Your Bed Every Morning",p1:"Do you make your bed in the morning? This is a small thing. But it is very helpful. When you make your bed, you finish your first task of the day. You feel good.",p2:"A clean room helps you think clearly. It helps you feel calm. Start your day with this one small habit. It takes only two minutes.",insight:"Making your bed each morning gives you an instant feeling of accomplishment.",vocab:[{word:"task",jp:"タスク、仕事"},{word:"habit",jp:"習慣"},{word:"clearly",jp:"はっきりと"},{word:"instant",jp:"すぐの"}]},
+    {topic:"ライフスタイル・時間管理",title:"Do One Thing at a Time",p1:"Many people try to do two things at the same time. This is called multitasking. But your brain does not like this. You make more mistakes. You feel more tired.",p2:"Try to do one thing at a time. Focus on just one task. Finish it. Then start the next one. You will do better work. You will feel less tired too.",insight:"Focusing on one task at a time helps you work faster and make fewer mistakes.",vocab:[{word:"multitasking",jp:"マルチタスク"},{word:"mistake",jp:"間違い"},{word:"focus",jp:"集中する"},{word:"task",jp:"仕事、課題"}]},
+    {topic:"ライフスタイル・時間管理",title:"Go Outside Every Day",p1:"Do you go outside every day? Fresh air is good for you. Natural light helps your brain wake up. It also helps you sleep better at night. Even ten minutes outside is helpful.",p2:"Leave your phone inside. Just walk and look around. Notice the trees, the sky, and the birds. This is a simple way to feel better every day.",insight:"Ten minutes outside in natural light each day can improve your sleep and mood.",vocab:[{word:"natural",jp:"自然の"},{word:"notice",jp:"気づく"},{word:"improve",jp:"改善する"},{word:"leave",jp:"置いていく"}]},
+    // Food & Health
+    {topic:"食と健康",title:"Drink More Water",p1:"Your body is sixty percent water. You need water every day. When you do not drink enough, you feel tired. You cannot think well. You may get a headache.",p2:"Try to drink eight glasses of water a day. Start your morning with a glass of water. Keep a bottle of water near you. Water is the best drink for your body.",insight:"Drinking a glass of water first thing in the morning helps your brain wake up.",vocab:[{word:"percent",jp:"パーセント"},{word:"headache",jp:"頭痛"},{word:"glass",jp:"コップ一杯"},{word:"bottle",jp:"ボトル"}]},
+    {topic:"食と健康",title:"Eat More Vegetables",p1:"Vegetables are very good for you. They have vitamins and minerals. These help your body stay strong and healthy. Dark green vegetables are the best. Try spinach, broccoli, or kale.",p2:"Try to eat vegetables with every meal. You do not need to cook them. Raw vegetables are also good. Add them to your lunch or dinner today.",insight:"Adding one serving of dark green vegetables to your daily meals boosts your energy.",vocab:[{word:"vitamin",jp:"ビタミン"},{word:"mineral",jp:"ミネラル"},{word:"raw",jp:"生の"},{word:"serving",jp:"一人前"}]},
+    {topic:"食と健康",title:"Do Not Skip Breakfast",p1:"Breakfast is very important. After sleeping all night, your body needs food. Breakfast gives your brain energy. Students who eat breakfast do better in school.",p2:"You do not need a big breakfast. A banana and some yogurt is enough. A bowl of oatmeal is also good. Eat something before you start your day.",insight:"Eating even a small breakfast helps your brain focus better during the morning.",vocab:[{word:"skip",jp:"抜く、飛ばす"},{word:"energy",jp:"エネルギー"},{word:"oatmeal",jp:"オートミール"},{word:"yogurt",jp:"ヨーグルト"}]},
+    // Philosophy of Life
+    {topic:"人生哲学・生き方の知恵",title:"Be Kind to Yourself",p1:"Are you kind to yourself? Many people are very hard on themselves. When they make a mistake, they say bad things to themselves. This is not good for your mind.",p2:"Try to speak to yourself like a good friend. Good friends are kind. They say, \"It is okay. You tried your best.\" Be that kind friend to yourself today.",insight:"Speaking kindly to yourself when you make mistakes helps you recover faster.",vocab:[{word:"kind",jp:"優しい"},{word:"mistake",jp:"間違い"},{word:"recover",jp:"回復する"},{word:"best",jp:"ベスト、最善"}]},
+    {topic:"人生哲学・生き方の知恵",title:"Small Steps Every Day",p1:"Big goals can feel scary. But you do not need to do everything at once. Small steps are enough. One small step every day adds up. After one year, you will be surprised.",p2:"What is your big goal? Break it into small pieces. Do one small thing today. Then do one more tomorrow. Small steps lead to big changes.",insight:"Taking one small step toward your goal each day creates big results over time.",vocab:[{word:"goal",jp:"目標"},{word:"scary",jp:"怖い、大変な"},{word:"add up",jp:"積み重なる"},{word:"surprised",jp:"驚く"}]},
+    {topic:"人生哲学・生き方の知恵",title:"Say Thank You More",p1:"Gratitude is powerful. When you feel thankful, your brain becomes happier. Try writing three things you are thankful for every morning. They can be very small things.",p2:"Thank you for my coffee. Thank you for the sunshine. Thank you for my health. These small moments of gratitude change how you see your day.",insight:"Writing three things you are grateful for each morning trains your brain to find the good.",vocab:[{word:"gratitude",jp:"感謝"},{word:"thankful",jp:"ありがたく思う"},{word:"sunshine",jp:"日差し"},{word:"moment",jp:"瞬間"}]},
+    // Fitness
+    {topic:"フィットネス・運動・身体",title:"Walk Every Day",p1:"Walking is one of the best exercises. It is free. You can do it anywhere. Just thirty minutes of walking a day is very good for your body and brain.",p2:"Walking helps your heart stay strong. It also helps you think more clearly. After a long walk, many people feel happier. Try a short walk after dinner tonight.",insight:"A thirty-minute walk after dinner helps your body digest food and improves your mood.",vocab:[{word:"exercise",jp:"運動"},{word:"heart",jp:"心臓"},{word:"digest",jp:"消化する"},{word:"clearly",jp:"はっきりと"}]},
+    {topic:"フィットネス・運動・身体",title:"Stretch in the Morning",p1:"Do you stretch in the morning? Stretching is very good for your body. It wakes up your muscles. It helps your blood move. You feel more ready for the day.",p2:"You do not need a lot of time. Five minutes is enough. Stretch your arms, legs, and back. Do it slowly. Feel each part of your body. Start your day feeling good.",insight:"Five minutes of morning stretching wakes up your muscles and helps you feel more alert.",vocab:[{word:"stretch",jp:"ストレッチする"},{word:"muscle",jp:"筋肉"},{word:"blood",jp:"血液"},{word:"alert",jp:"すっきりした、機敏な"}]},
+    {topic:"フィットネス・運動・身体",title:"Stand Up More",p1:"Do you sit all day? Sitting too much is bad for your body. Your back hurts. Your legs get weak. Your heart also gets less healthy. Try to stand up more often.",p2:"A simple rule: stand up every hour. Walk to the kitchen. Get a glass of water. Or just stand for one minute. Small breaks make a big difference.",insight:"Standing up for one minute every hour reduces the health risks of sitting all day.",vocab:[{word:"weak",jp:"弱い"},{word:"healthy",jp:"健康的な"},{word:"rule",jp:"ルール"},{word:"difference",jp:"違い、効果"}]}
+  ],
+  A2: [
+    {topic:"マインドフルネス・心理学",title:"The Power of Saying No",p1:"Many people find it hard to say no. They agree to everything and then feel overwhelmed. But saying no is an important skill. It protects your time and energy. When you say yes to everything, you cannot give your best to anything.",p2:"Start small. Next time someone asks you to do something you don't want to do, pause before answering. You don't need to explain yourself. A simple 'I can't take that on right now' is enough. Saying no to others often means saying yes to yourself.",insight:"Saying no to low-priority requests protects your energy for what truly matters to you.",vocab:[{word:"overwhelmed",jp:"圧倒された、手に負えない"},{word:"protect",jp:"守る"},{word:"pause",jp:"一時停止する、間を置く"},{word:"priority",jp:"優先事項"}]},
+    {topic:"マインドフルネス・心理学",title:"Your Phone and Your Brain",p1:"Most people check their phone more than one hundred times a day. Every time you check it, your brain gets a small reward. This feels good. But it also makes your brain need more and more checks to feel satisfied. This is similar to an addiction.",p2:"Try a simple experiment. For one hour, put your phone in another room. Notice how you feel. You may feel restless at first. But after a while, you will feel calmer and more focused. Your brain needs quiet time to recharge.",insight:"Keeping your phone out of sight for one hour a day can significantly improve your focus.",vocab:[{word:"reward",jp:"報酬"},{word:"satisfied",jp:"満足した"},{word:"addiction",jp:"依存症"},{word:"restless",jp:"落ち着かない"},{word:"recharge",jp:"充電する、回復する"}]},
+    {topic:"マインドフルネス・心理学",title:"The Two-Minute Rule",p1:"Do you have a long list of tasks that you keep putting off? Try the two-minute rule. If a task takes less than two minutes to complete, do it immediately. Don't add it to your list. Just do it now.",p2:"This rule comes from productivity expert David Allen. It works because small tasks pile up and create mental stress. Replying to a short email, putting dishes away, or making a quick call — these tiny actions, done immediately, keep your mind clear and your space organized.",insight:"Completing any task that takes under two minutes immediately prevents mental clutter from building up.",vocab:[{word:"put off",jp:"先延ばしにする"},{word:"immediately",jp:"すぐに"},{word:"pile up",jp:"積み重なる"},{word:"mental",jp:"精神的な"},{word:"clutter",jp:"雑然とした状態"}]},
+    {topic:"ピアノ・音楽・脳",title:"Why Minor Keys Feel Sad",p1:"Have you ever noticed that some songs make you feel sad, even without words? This often happens with music in a minor key. In Western music, there are major keys and minor keys. Major keys usually sound bright and happy. Minor keys sound darker and more emotional.",p2:"Scientists believe this is partly learned and partly natural. Children who have never studied music still feel that minor keys sound sadder. Music in a minor key is used in film soundtracks to create tension or sadness. Next time you feel moved by a piece of music, check if it is in a minor key.",insight:"Paying attention to whether music is in a major or minor key helps you understand why it makes you feel a certain way.",vocab:[{word:"minor key",jp:"短調"},{word:"major key",jp:"長調"},{word:"tension",jp:"緊張感"},{word:"soundtrack",jp:"サウンドトラック"},{word:"emotional",jp:"感情的な"}]},
+    {topic:"ピアノ・音楽・脳",title:"Music and Memory",p1:"Have you ever heard an old song and suddenly remembered a moment from years ago? Music is strongly linked to memory. When you learn something new while listening to music, the music becomes part of the memory. Later, hearing that same music can bring the memory back.",p2:"This is why music therapy is used to help people with Alzheimer's disease. Even when patients cannot remember their own family, they can often sing the songs of their youth. Music reaches parts of the brain that other things cannot. It is a powerful bridge to the past.",insight:"Studying or learning while listening to specific music can help you recall information more easily later.",vocab:[{word:"linked",jp:"結びついた"},{word:"therapy",jp:"療法"},{word:"recall",jp:"思い出す"},{word:"bridge",jp:"橋、つなぐもの"},{word:"youth",jp:"若い頃"}]},
+    {topic:"ピアノ・音楽・脳",title:"The 10,000 Hour Question",p1:"You may have heard that it takes 10,000 hours to become an expert at anything. This idea came from researcher Anders Ericsson, who studied musicians. He found that the best violinists had practiced for roughly 10,000 hours by the time they were adults.",p2:"However, Ericsson later said the number itself is not the point. What matters is the quality of practice, not just the hours. He called it 'deliberate practice' — focused, goal-oriented effort with feedback. So it's not just about how long you practice piano, but how thoughtfully you practice.",insight:"Focused, goal-oriented practice is far more effective than simply repeating something for a long time.",vocab:[{word:"expert",jp:"専門家"},{word:"roughly",jp:"おおよそ"},{word:"deliberate",jp:"意図的な"},{word:"feedback",jp:"フィードバック"},{word:"thoughtfully",jp:"注意深く、丁寧に"}]},
+    {topic:"ライフスタイル・時間管理",title:"Design Your Morning",p1:"How you spend the first hour of your day sets the tone for everything that follows. Many successful people protect their morning routine carefully. They avoid checking email or social media right away. Instead, they start with something that belongs to them — exercise, reading, or quiet thinking.",p2:"You don't need a complicated morning routine. Start with just one thing. Drink water before coffee. Write three sentences in a journal. Stretch for five minutes. Choose one small act that makes the morning feel like yours. Over time, this habit can change how you feel all day.",insight:"Protecting the first thirty minutes of your morning from screens creates a calmer and more intentional day.",vocab:[{word:"routine",jp:"ルーティン、習慣"},{word:"complicated",jp:"複雑な"},{word:"journal",jp:"日記"},{word:"intentional",jp:"意図的な"},{word:"protect",jp:"守る"}]},
+    {topic:"ライフスタイル・時間管理",title:"The Art of Doing Less",p1:"Modern life celebrates busyness. People say 'I'm so busy' as if it's a badge of honor. But doing less, and doing it well, is often more valuable than doing many things poorly. The Japanese concept of 'ikigai' encourages focusing on what truly gives your life meaning.",p2:"Try an experiment this week. Look at your to-do list and remove two items that are not truly important. Use that time to do one important thing more slowly and carefully. Notice how it feels. Doing less with more attention often produces better results and greater satisfaction.",insight:"Removing low-value tasks from your schedule creates space to do meaningful work with greater care.",vocab:[{word:"celebrate",jp:"称賛する"},{word:"badge of honor",jp:"名誉の証"},{word:"ikigai",jp:"生きがい"},{word:"satisfaction",jp:"満足感"},{word:"valuable",jp:"価値のある"}]},
+    {topic:"ライフスタイル・時間管理",title:"Zone 2 Training Explained",p1:"Zone 2 training is one of the most talked-about fitness topics right now. It means exercising at a low intensity — where you can still hold a conversation. This might seem too easy, but research shows it is extremely effective for building endurance and metabolic health.",p2:"During Zone 2 exercise, your body learns to burn fat as fuel more efficiently. It also improves your cardiovascular system without stressing your body too much. Aim for thirty to forty-five minutes of Zone 2 activity — such as a brisk walk or easy cycling — three to four times a week.",insight:"Exercising at a pace where you can still talk builds deep endurance and improves fat-burning efficiency over time.",vocab:[{word:"intensity",jp:"強度"},{word:"endurance",jp:"持久力"},{word:"metabolic",jp:"代謝の"},{word:"cardiovascular",jp:"心臓血管の"},{word:"efficient",jp:"効率的な"}]},
+    {topic:"食と健康",title:"Why Fermented Foods Are Trending",p1:"Fermented foods like yogurt, kimchi, miso, and kefir are becoming increasingly popular, and for good reason. These foods are rich in probiotics — live bacteria that support your gut health. Recent research from Stanford University showed that eating fermented foods regularly increases the diversity of gut bacteria and reduces inflammation in the body.",p2:"Your gut is sometimes called your 'second brain' because it contains millions of nerve cells that affect your mood and thinking. A healthy gut microbiome has been linked to better mental health, stronger immunity, and even improved sleep. Adding one or two servings of fermented food to your daily diet is one of the simplest ways to support overall health.",insight:"Adding a small serving of fermented food like yogurt or miso to your daily diet can significantly improve your gut and mental health.",vocab:[{word:"fermented",jp:"発酵した"},{word:"probiotics",jp:"プロバイオティクス"},{word:"inflammation",jp:"炎症"},{word:"microbiome",jp:"微生物叢（マイクロバイオーム）"},{word:"immunity",jp:"免疫"}]},
+    {topic:"食と健康",title:"The Truth About Processed Food",p1:"Ultra-processed foods are products that contain many artificial ingredients, preservatives, and additives. Think instant noodles, packaged snacks, and fast food. A large study in 2024 confirmed that eating these foods regularly is linked to higher risks of heart disease, type 2 diabetes, and even depression.",p2:"The problem is not just the lack of nutrients. Ultra-processed foods are engineered to be hard to stop eating. They trigger your brain's reward system in ways that whole foods do not. One practical step: try replacing one ultra-processed snack each day with a whole food alternative — nuts, fruit, or boiled eggs.",insight:"Replacing just one ultra-processed snack per day with a whole food can meaningfully reduce your health risks over time.",vocab:[{word:"ultra-processed",jp:"超加工された"},{word:"preservative",jp:"保存料"},{word:"additive",jp:"添加物"},{word:"trigger",jp:"引き起こす"},{word:"alternative",jp:"代替品"}]},
+    {topic:"食と健康",title:"Eating Windows and Your Body Clock",p1:"Time-restricted eating — eating all your meals within a window of eight to ten hours — has gained attention in recent nutritional science. Research suggests that aligning your eating schedule with your body's natural circadian rhythm helps your metabolism work more efficiently.",p2:"In practical terms, this might mean finishing dinner by 7pm and not eating again until 9am. During the fasting window, your body has time to repair cells and regulate blood sugar. You don't need to count calories — simply narrowing your eating window may improve energy levels, digestion, and sleep quality.",insight:"Finishing your last meal at least two to three hours before bedtime gives your body time to repair and reset overnight.",vocab:[{word:"circadian rhythm",jp:"体内時計（サーカディアンリズム）"},{word:"metabolism",jp:"代謝"},{word:"fasting",jp:"断食、食事を控えること"},{word:"regulate",jp:"調節する"},{word:"digestion",jp:"消化"}]},
+    {topic:"人生哲学・生き方の知恵",title:"Marcus Aurelius and the Morning Question",p1:"Marcus Aurelius was a Roman emperor who ruled from 161 to 180 AD. He was also a philosopher who practiced Stoicism. Every morning, he asked himself a simple question: 'What do I need to do today to live in accordance with my values?' He wrote his thoughts in a private journal, now known as 'Meditations'.",p2:"The Stoics believed that you cannot control what happens to you, but you can always control how you respond. Aurelius faced wars, plagues, and political crises — yet his writings remain calm and thoughtful. His central idea was this: focus on what is within your control, and let go of the rest.",insight:"Starting each morning by asking 'What is within my control today?' is a simple practice that reduces anxiety and increases clarity.",vocab:[{word:"emperor",jp:"皇帝"},{word:"Stoicism",jp:"ストア哲学"},{word:"values",jp:"価値観"},{word:"accordance",jp:"一致"},{word:"plague",jp:"疫病"}]},
+    {topic:"人生哲学・生き方の知恵",title:"Wabi-Sabi: The Beauty of Imperfection",p1:"Wabi-sabi is a Japanese philosophy that finds beauty in imperfection, impermanence, and incompleteness. A cracked tea bowl repaired with gold. A weathered wooden fence. A fallen autumn leaf. These things are considered beautiful precisely because they show the passage of time and the marks of life.",p2:"In modern life, we are surrounded by messages telling us to be perfect. Wabi-sabi offers a different perspective. It suggests that the worn, the aged, and the imperfect carry a quiet dignity that polished perfection cannot. Embracing wabi-sabi means accepting that you, too, are beautiful as you are — cracks and all.",insight:"Noticing the beauty in worn, imperfect things around you is a daily practice that builds acceptance and contentment.",vocab:[{word:"imperfection",jp:"不完全さ"},{word:"impermanence",jp:"無常"},{word:"weathered",jp:"風雨にさらされた"},{word:"dignity",jp:"品格"},{word:"embrace",jp:"受け入れる"}]},
+    {topic:"人生哲学・生き方の知恵",title:"The Regret Minimization Framework",p1:"Jeff Bezos, the founder of Amazon, used a simple mental tool when he was deciding whether to leave his stable job to start a company. He called it the 'Regret Minimization Framework.' He imagined himself at age eighty, looking back on his life. He asked: 'Will I regret not trying this?'",p2:"The answer was clear — he would regret it far more if he never tried. So he quit and built Amazon. This framework is useful for any big decision. When you project yourself into old age and look back, the fear of short-term failure often becomes much smaller than the regret of never having tried.",insight:"When facing a difficult decision, ask yourself which choice you will regret more at age eighty — acting or not acting.",vocab:[{word:"regret",jp:"後悔"},{word:"framework",jp:"枠組み、考え方の틀"},{word:"stable",jp:"安定した"},{word:"project",jp:"（ここでは）想像する"},{word:"failure",jp:"失敗"}]},
+    {topic:"フィットネス・運動・身体",title:"Why Muscle Mass Matters After 40",p1:"After the age of thirty, adults naturally lose about three to five percent of their muscle mass per decade. This process, called sarcopenia, accelerates after forty. Loss of muscle mass is linked to slower metabolism, weaker bones, higher risk of falls, and reduced quality of life in later years.",p2:"The good news is that resistance training — lifting weights or using your own body weight — can slow and even reverse this process at any age. Research shows that adults in their sixties and seventies who start strength training can regain significant muscle mass within a few months. You are never too old to start.",insight:"Starting resistance training at any age — even in your sixties — can significantly rebuild muscle mass and improve daily functioning.",vocab:[{word:"sarcopenia",jp:"サルコペニア（筋肉量の減少）"},{word:"accelerate",jp:"加速する"},{word:"metabolism",jp:"代謝"},{word:"resistance training",jp:"レジスタンストレーニング（筋トレ）"},{word:"reverse",jp:"逆転させる"}]},
+    {topic:"フィットネス・運動・身体",title:"The Science of Cold Exposure",p1:"Cold showers and ice baths have become a popular wellness trend, promoted by figures like Wim Hof. But what does the science actually say? Research shows that brief cold exposure — as short as thirty seconds of cold water — activates the sympathetic nervous system and releases norepinephrine, a chemical that boosts alertness and mood.",p2:"Cold exposure also triggers the release of brown fat, a type of fat that generates heat and burns calories. Some studies suggest it may help reduce inflammation and improve insulin sensitivity. You don't need an ice bath — simply ending your shower with thirty to sixty seconds of cold water can provide meaningful benefits.",insight:"Ending your shower with thirty seconds of cold water activates your nervous system and can improve alertness and mood throughout the day.",vocab:[{word:"exposure",jp:"さらされること"},{word:"sympathetic nervous system",jp:"交感神経系"},{word:"norepinephrine",jp:"ノルエピネフリン"},{word:"alertness",jp:"覚醒度、注意力"},{word:"insulin sensitivity",jp:"インスリン感受性"}]},
+    {topic:"フィットネス・運動・身体",title:"How Sleep Builds Your Fitness",p1:"Many people focus on their workouts and diet but overlook sleep. Yet sleep may be the single most important factor in physical recovery and fitness progress. During deep sleep, your body releases growth hormone, which repairs muscle tissue damaged during exercise. Without enough sleep, this repair process is incomplete.",p2:"A 2019 Stanford study found that basketball players who extended their sleep to ten hours per night significantly improved their speed, accuracy, and reaction time. While ten hours may not be realistic for everyone, prioritizing seven to nine hours of sleep is one of the most effective — and overlooked — performance enhancers available.",insight:"Prioritizing seven to nine hours of sleep is one of the most powerful ways to improve athletic performance and physical recovery.",vocab:[{word:"overlook",jp:"見落とす"},{word:"recovery",jp:"回復"},{word:"growth hormone",jp:"成長ホルモン"},{word:"reaction time",jp:"反応時間"},{word:"prioritize",jp:"優先する"}]}
+  ],
+  B1: [
+    {topic:"マインドフルネス・心理学",title:"The Neuroscience of Habit Formation",p1:"Every habit you have — good or bad — follows the same neurological loop: a cue, a routine, and a reward. This framework, described by researcher Charles Duhigg in 'The Power of Habit,' explains why habits are so persistent. The basal ganglia, a primitive part of the brain, stores habitual behaviors and executes them automatically, freeing the prefrontal cortex for more complex thinking.",p2:"Understanding this loop gives you leverage to change habits deliberately. To build a new habit, you need a clear cue (a specific time or trigger), a simple routine (the behavior itself), and a meaningful reward (something your brain genuinely values). The key insight from recent neuroscience is that you cannot eliminate a habit — you can only replace the routine while keeping the same cue and reward structure.",insight:"To change a habit, keep the same cue and reward but deliberately replace the routine — this works with your brain's existing neural pathways rather than against them.",vocab:[{word:"neurological",jp:"神経学的な"},{word:"basal ganglia",jp:"大脳基底核"},{word:"prefrontal cortex",jp:"前頭前皮質"},{word:"leverage",jp:"てこの力、有利な手段"},{word:"deliberately",jp:"意図的に"}]},
+    {topic:"マインドフルネス・心理学",title:"Cognitive Behavioral Therapy in Daily Life",p1:"Cognitive Behavioral Therapy, or CBT, is one of the most evidence-based psychological treatments available. Originally developed by psychiatrist Aaron Beck in the 1960s, it is now used to treat depression, anxiety, PTSD, and many other conditions. Its central premise is deceptively simple: the way you think about events shapes how you feel and behave.",p2:"The CBT technique of 'cognitive restructuring' involves identifying automatic negative thoughts — such as 'I always fail' or 'Nobody likes me' — and examining whether they are actually supported by evidence. Most of the time, they are not. By replacing distorted thinking with more accurate, balanced thoughts, you can measurably change your emotional responses. This is a skill anyone can practice, not just in therapy, but in everyday life.",insight:"When a negative thought arises, asking 'What is the actual evidence for and against this thought?' is a simple CBT technique that can shift your emotional state.",vocab:[{word:"evidence-based",jp:"エビデンスに基づいた"},{word:"premise",jp:"前提"},{word:"cognitive restructuring",jp:"認知再構成"},{word:"distorted",jp:"歪んだ"},{word:"measurably",jp:"測定できるほど明確に"}]},
+    {topic:"マインドフルネス・心理学",title:"The Science of Awe",p1:"Awe is the emotion you feel when you encounter something vast, beautiful, or beyond your current understanding — a mountain range, a symphony, an act of profound generosity. For much of history, awe was considered a rare, spiritual experience. But researchers at UC Berkeley, led by psychologist Dacher Keltner, have spent years studying awe scientifically and discovered it has measurable psychological benefits.",p2:"Experiencing awe consistently reduces activity in the default mode network — the brain region associated with self-referential thinking, worry, and rumination. In other words, awe quiets the ego. Studies show that people who regularly experience awe report greater life satisfaction, increased prosocial behavior, and reduced inflammation markers. Remarkably, you don't need to stand before the Grand Canyon — research shows that even fifteen minutes of walking in nature while paying full attention to your surroundings can reliably produce mild awe.",insight:"Deliberately seeking small moments of awe — through nature, music, or art — measurably reduces self-focused rumination and increases wellbeing.",vocab:[{word:"awe",jp:"畏敬の念"},{word:"default mode network",jp:"デフォルトモードネットワーク"},{word:"rumination",jp:"反芻思考（くよくよ考えること）"},{word:"prosocial",jp:"向社会的な"},{word:"inflammation markers",jp:"炎症マーカー"}]},
+    {topic:"ピアノ・音楽・脳",title:"Perfect Pitch: Nature or Nurture?",p1:"Perfect pitch, or absolute pitch, is the rare ability to identify or reproduce a musical note without any external reference. Someone with perfect pitch can hear a car horn and immediately name the note. For decades, researchers debated whether this ability is innate or acquired. The consensus now is that it requires both a genetic predisposition and early musical training, typically before age seven.",p2:"Interestingly, perfect pitch is significantly more common among speakers of tonal languages — languages like Mandarin, Cantonese, and Vietnamese, where pitch carries meaning at the word level. This suggests that early exposure to pitch-based linguistic distinctions may prime the auditory cortex in ways that facilitate the development of absolute pitch. Recent neuroimaging studies show that individuals with perfect pitch have a larger planum temporale — an auditory processing region — in their left hemisphere.",insight:"Early musical training before age seven, especially in environments where pitch distinctions matter linguistically, significantly increases the likelihood of developing perfect pitch.",vocab:[{word:"absolute pitch",jp:"絶対音感"},{word:"innate",jp:"生まれつきの"},{word:"predisposition",jp:"素因、傾向"},{word:"tonal language",jp:"声調言語"},{word:"planum temporale",jp:"側頭平面（聴覚処理領域）"}]},
+    {topic:"ピアノ・音楽・脳",title:"Improvisation and the Creative Brain",p1:"When jazz musicians improvise, something remarkable happens in their brains. Neuroscientist Charles Limb used fMRI scanning to observe the brains of jazz pianists during improvisation and discovered a striking pattern: the dorsolateral prefrontal cortex — associated with self-monitoring and inhibition — showed decreased activity, while the medial prefrontal cortex — linked to self-expression and autobiographical storytelling — became highly active.",p2:"In essence, the brain suppresses its internal critic and amplifies its expressive voice during genuine creative flow. This finding has implications beyond music. It suggests that creativity, in any domain, is enhanced when we reduce self-judgment and allow ideas to emerge without premature evaluation. Techniques like free writing, brainstorming without filtering, and deliberate 'bad first drafts' all work by mimicking this neurological state.",insight:"Deliberately suspending self-judgment during the initial phase of any creative work — writing, designing, problem-solving — activates the same brain regions as jazz improvisation.",vocab:[{word:"improvisation",jp:"即興演奏"},{word:"inhibition",jp:"抑制"},{word:"autobiographical",jp:"自叙伝的な"},{word:"premature",jp:"時期尚早な"},{word:"mimicking",jp:"模倣する"}]},
+    {topic:"ピアノ・音楽・脳",title:"The Emotional Grammar of Music",p1:"Music communicates emotion across cultures with surprising consistency. Psychologist Stefan Koelsch and colleagues have conducted cross-cultural studies playing unfamiliar Western music to people in remote regions of the world with no prior exposure to it — and found that listeners correctly identified the intended emotion (happy, sad, fearful, peaceful) at rates significantly above chance. This suggests that certain acoustic properties — tempo, pitch direction, harmonic tension, timbre — map onto emotional states in ways that transcend cultural learning.",p2:"However, culture still plays a significant role in the nuances of musical emotion. What sounds merely 'tense' to a Western listener may sound 'profoundly mournful' to someone from a different musical tradition. The most sophisticated music exploits this interplay between universal acoustic principles and culturally learned associations to create complex emotional experiences that resist easy description — which may be precisely why music can express what language often cannot.",insight:"Understanding that music conveys emotion through universal acoustic properties — not just cultural convention — helps explain why a piece of music can move you even when you know nothing about its origins.",vocab:[{word:"acoustic",jp:"音響の"},{word:"timbre",jp:"音色"},{word:"transcend",jp:"超越する"},{word:"mournful",jp:"悲しげな"},{word:"interplay",jp:"相互作用"}]},
+    {topic:"ライフスタイル・時間管理",title:"Deep Work in a Distracted World",p1:"Computer science professor Cal Newport introduced the concept of 'deep work' — cognitively demanding tasks performed in a state of distraction-free concentration that push your capabilities to their limit. Newport argues that deep work is becoming increasingly rare in our era of open offices, constant notifications, and the always-on culture of digital communication — and simultaneously increasingly valuable, because the people who can do it produce disproportionately excellent results.",p2:"Newport distinguishes deep work from 'shallow work' — logistical tasks that don't require intense concentration, like answering routine emails or attending status meetings. His prescription is to schedule blocks of uninterrupted time — ideally two to four hours — for your most cognitively demanding work, and to treat these blocks as inviolable appointments. Even one ninety-minute deep work session per day, consistently maintained, can dramatically accelerate meaningful progress.",insight:"Scheduling even one ninety-minute block of distraction-free work each day — and treating it as a non-negotiable appointment — can transform your rate of meaningful output.",vocab:[{word:"cognitively",jp:"認知的に"},{word:"disproportionately",jp:"不釣り合いに"},{word:"logistical",jp:"事務的な、作業的な"},{word:"inviolable",jp:"侵すことのできない"},{word:"prescription",jp:"（ここでは）処方、推奨策"}]},
+    {topic:"ライフスタイル・時間管理",title:"Essentialism: The Disciplined Pursuit of Less",p1:"Greg McKeown's philosophy of 'essentialism' rests on a single, counterintuitive premise: almost everything is non-essential, and ruthlessly eliminating the non-essential is the highest form of productivity. Where conventional productivity advice tells you to do more faster, essentialism asks: what is the one thing, if done exceptionally well, that would make everything else either easier or irrelevant?",p2:"McKeown identifies a systematic process for essentialist thinking: explore — generate many options; eliminate — apply selective criteria to identify the vital few; execute — remove obstacles that prevent the essential from happening easily. The hardest part, he argues, is the elimination phase, because modern culture equates busyness with virtue. Saying 'I don't have time' is a socially acceptable excuse; 'It's not a priority for me' is the honest version — and the one that forces you to take responsibility for how you allocate your finite attention.",insight:"Asking 'What is the one thing that would make everything else easier or unnecessary?' is the essential question that cuts through the noise of a crowded to-do list.",vocab:[{word:"essentialism",jp:"本質主義（重要なことだけに集中する哲学）"},{word:"counterintuitive",jp:"直感に反する"},{word:"ruthlessly",jp:"容赦なく"},{word:"irrelevant",jp:"無関係な、重要でない"},{word:"finite",jp:"有限の"}]},
+    {topic:"ライフスタイル・時間管理",title:"The Japanese Art of Kaizen",p1:"Kaizen is a Japanese philosophy of continuous improvement through small, incremental changes. Originally developed as a manufacturing principle at Toyota in the post-war period — where it helped transform a struggling company into the world's most efficient automaker — kaizen has since been applied to personal development, healthcare, software engineering, and organizational management worldwide.",p2:"The psychological power of kaizen lies in its relationship with the brain's threat response. Large, dramatic change activates fear and resistance in the amygdala. But tiny, non-threatening improvements — one percent better each day — bypass this resistance entirely. Mathematically, improving by just one percent every day for a year results in being 37 times better than when you started. The compound effect of tiny improvements is one of the most underestimated forces in human development.",insight:"Committing to improving any single habit or skill by just one percent each day — rather than seeking dramatic transformation — produces extraordinary results over a year through the mathematics of compounding.",vocab:[{word:"incremental",jp:"段階的な"},{word:"amygdala",jp:"扁桃体"},{word:"bypass",jp:"回避する"},{word:"compound effect",jp:"複利効果"},{word:"underestimated",jp:"過小評価されている"}]},
+    {topic:"食と健康",title:"The Gut-Brain Axis",p1:"The gut-brain axis refers to the bidirectional communication network between your gastrointestinal system and your central nervous system. This connection operates through multiple channels: the vagus nerve (which carries signals directly between the gut and brain), the enteric nervous system (sometimes called the 'second brain,' containing over 100 million neurons embedded in the gut wall), immune signaling, and the hormones and neurotransmitters produced by gut bacteria.",p2:"Recent research has revealed that approximately ninety percent of serotonin — the neurotransmitter most associated with mood regulation — is produced not in the brain but in the gut. This has profound implications for mental health. Studies show that disrupting the gut microbiome through a highly processed diet is associated with increased risk of depression and anxiety, while interventions that restore microbial diversity — dietary fiber, fermented foods, probiotic supplementation — show promising results in improving mood and reducing anxiety symptoms.",insight:"Supporting your gut microbiome through dietary fiber and fermented foods may be one of the most direct nutritional interventions for improving mood and reducing anxiety.",vocab:[{word:"bidirectional",jp:"双方向の"},{word:"vagus nerve",jp:"迷走神経"},{word:"enteric nervous system",jp:"腸管神経系"},{word:"serotonin",jp:"セロトニン"},{word:"microbial diversity",jp:"微生物の多様性"}]},
+    {topic:"食と健康",title:"Chrononutrition: Eating in Tune with Your Biology",p1:"Chrononutrition is an emerging field that studies how the timing of food intake interacts with the body's circadian system — the twenty-four-hour biological clock that regulates virtually every physiological process. Research from the Salk Institute and other leading institutions has demonstrated that eating in alignment with circadian rhythms — front-loading calories earlier in the day and avoiding food in the late evening — produces significantly better metabolic outcomes than eating the same food in a different pattern.",p2:"The underlying mechanism involves clock genes expressed in liver, pancreas, and adipose tissue that regulate how efficiently nutrients are processed at different times of day. Insulin sensitivity, for example, peaks in the morning and declines toward evening — meaning the same meal produces a lower blood sugar spike when eaten at breakfast than at dinner. Practical applications include making breakfast or lunch the largest meal of the day and finishing eating at least three hours before sleep.",insight:"Eating your largest meal earlier in the day — when insulin sensitivity is highest — and avoiding food in the two to three hours before sleep can improve metabolic health without changing what you eat.",vocab:[{word:"chrononutrition",jp:"時間栄養学"},{word:"circadian",jp:"概日の（約24時間周期の）"},{word:"insulin sensitivity",jp:"インスリン感受性"},{word:"adipose tissue",jp:"脂肪組織"},{word:"front-loading",jp:"前半に集中させること"}]},
+    {topic:"食と健康",title:"Ultra-Processed Foods and the Brain",p1:"A landmark 2024 study published in The Lancet tracked over thirty thousand adults across multiple countries for more than a decade and found that individuals in the highest quartile of ultra-processed food consumption had a forty-four percent higher risk of developing depression compared to those in the lowest quartile. This association held even after controlling for overall caloric intake, socioeconomic status, and physical activity levels.",p2:"The proposed mechanisms are multiple: ultra-processed foods typically lack dietary fiber necessary for microbiome health; they are often high in advanced glycation end products (AGEs) that promote neuroinflammation; and their precise combination of fat, sugar, and salt ratios appear to dysregulate the dopaminergic reward system in ways that drive compulsive consumption. Critically, the brain changes associated with high ultra-processed food intake resemble — in neuroimaging studies — patterns observed in substance use disorders.",insight:"Reducing ultra-processed food consumption is increasingly understood not just as a physical health intervention but as a meaningful strategy for protecting mental health and cognitive function.",vocab:[{word:"quartile",jp:"四分位（全体を4等分したうちの一つ）"},{word:"neuroinflammation",jp:"神経炎症"},{word:"dysregulate",jp:"調節不全を引き起こす"},{word:"dopaminergic",jp:"ドーパミン作動性の"},{word:"compulsive",jp:"強迫的な"}]},
+    {topic:"人生哲学・生き方の知恵",title:"Memento Mori: The Stoic Practice of Death Awareness",p1:"Memento mori — Latin for 'remember that you will die' — was a central contemplative practice of the ancient Stoics. Far from being morbid, the Stoics considered regular reflection on mortality to be the most effective antidote to triviality. When you remember that your time is finite, the irrelevant loses its grip and what genuinely matters becomes clear. Seneca wrote: 'Let us prepare our minds as if we had come to the very end of life. Let us postpone nothing.'",p2:"Contemporary psychology has arrived at similar conclusions through Terror Management Theory, developed by psychologist Jeff Greenberg. When people are subtly reminded of their mortality, they consistently show increased investment in their core values, greater generosity toward others, and deeper engagement with meaningful relationships. The key finding is that conscious, non-anxious awareness of death — unlike the suppressed, unconscious dread most people carry — actually liberates rather than paralyzes.",insight:"Briefly and calmly contemplating your own mortality — even for one minute each morning — is a research-supported practice for clarifying priorities and reducing time spent on trivialities.",vocab:[{word:"contemplative",jp:"瞑想的な、深く考える"},{word:"mortality",jp:"死すべき運命、死"},{word:"antidote",jp:"解毒剤、対抗手段"},{word:"triviality",jp:"些細なこと"},{word:"Terror Management Theory",jp:"恐怖管理理論"}]},
+    {topic:"人生哲学・生き方の知恵",title:"Ikigai and the Okinawan Approach to Purpose",p1:"Ikigai — often translated as 'reason for being' — is a Japanese concept that has been studied extensively in the context of Okinawa, one of the world's Blue Zones where people consistently live past one hundred. Unlike the Western concept of 'purpose,' which tends to be grand and career-focused, ikigai in Okinawan culture is often modest and deeply rooted in daily life — tending a garden, cooking for grandchildren, playing a traditional instrument.",p2:"Neuroscientist Ken Mogi, in his study of ikigai, identifies five pillars: starting small, accepting yourself, connecting with others and the world, seeking out small joys, and being in the here and now. What's striking is how different this is from the Western achievement model. Okinawan centenarians rarely describe their ikigai in terms of legacy or impact — instead, they describe specific sensory pleasures, relationships, and daily rituals. Purpose, in this view, is less a destination than a quality of daily attention.",insight:"Finding ikigai may require looking not at grand life goals but at the specific daily activities — however modest — that make you genuinely want to get up in the morning.",vocab:[{word:"Blue Zone",jp:"ブルーゾーン（長寿地域）"},{word:"centenarian",jp:"百歳以上の人"},{word:"pillar",jp:"柱、基盤"},{word:"legacy",jp:"遺産、後世に残すもの"},{word:"sensory",jp:"感覚的な"}]},
+    {topic:"人生哲学・生き方の知恵",title:"The Paradox of Choice",p1:"Psychologist Barry Schwartz, in his influential work 'The Paradox of Choice,' demonstrated through research that increasing the number of options available to people does not increase their happiness — it often diminishes it. His landmark study involved a supermarket jam display: when sixteen varieties were offered, customers were ten times more likely to stop and look, but significantly less likely to actually buy than when only six varieties were offered. More choice created more browsing, more deliberation, more second-guessing — and ultimately more regret.",p2:"The psychological mechanism behind this is opportunity cost awareness: the more options you have, the more aware you are of what you're giving up by choosing any single one. This 'loss' — even of options you would never have chosen — generates subtle dissatisfaction with whatever you did choose. Schwartz's prescription is counterintuitive: artificially limit your choices. Set personal rules ('I always order the second-cheapest wine'; 'I only consider three candidates for any job') to reduce deliberation time and increase satisfaction with your decisions.",insight:"Deliberately limiting your options — rather than maximizing them — leads to faster decisions and greater satisfaction with the choices you make.",vocab:[{word:"paradox",jp:"逆説"},{word:"diminish",jp:"減少させる"},{word:"opportunity cost",jp:"機会費用（何かを選ぶことで失う他の選択肢の価値）"},{word:"deliberation",jp:"熟慮"},{word:"counterintuitive",jp:"直感に反する"}]},
+    {topic:"フィットネス・運動・身体",title:"VO2 Max: The Most Powerful Predictor of Longevity",p1:"VO2 max — the maximum rate at which your body can consume oxygen during intense exercise — has emerged in recent years as arguably the single most powerful predictor of long-term health and longevity. A landmark study published in JAMA in 2018 tracked over one hundred thousand patients for more than two decades and found that individuals in the lowest quintile of cardiorespiratory fitness had a mortality risk more than five times higher than those in the highest quintile — a risk differential larger than that associated with smoking, hypertension, or diabetes.",p2:"VO2 max declines naturally by approximately ten percent per decade after age thirty, but this decline is not inevitable — it responds remarkably well to training. High-intensity interval training (HIIT) and Zone 2 aerobic training used in combination appear to produce the largest improvements in VO2 max. Clinician-researcher Peter Attia has argued that optimizing VO2 max should be the primary fitness goal for anyone interested in maintaining physical capacity and independence into old age.",insight:"Incorporating both Zone 2 aerobic training and brief high-intensity intervals into your weekly exercise routine is the most evidence-supported strategy for improving VO2 max and long-term health outcomes.",vocab:[{word:"VO2 max",jp:"最大酸素摂取量"},{word:"quintile",jp:"五分位（全体を5等分したうちの一つ）"},{word:"cardiorespiratory",jp:"心肺の"},{word:"mortality risk",jp:"死亡リスク"},{word:"hypertension",jp:"高血圧"}]},
+    {topic:"フィットネス・運動・身体",title:"The Myokine Revolution",p1:"For much of medical history, skeletal muscle was considered simply a mechanical tissue — useful for movement but otherwise metabolically passive. This view was overturned by the discovery of myokines: signaling proteins secreted by muscle fibers during contraction that travel through the bloodstream and exert profound effects on virtually every organ system, including the brain, liver, pancreas, bones, immune system, and adipose tissue.",p2:"The myokine irisin, for example, is released during aerobic exercise and has been shown to cross the blood-brain barrier and stimulate the production of BDNF (Brain-Derived Neurotrophic Factor) — a protein that promotes the growth of new neurons and protects existing ones. This is one of the key mechanisms behind the well-documented cognitive benefits of exercise. Interleukin-6, another myokine, has potent anti-inflammatory effects when produced by exercise — paradoxically, since chronic IL-6 elevation from fat tissue is pro-inflammatory. This distinction illustrates why exercise-induced inflammation and disease-related inflammation, though using similar molecular machinery, produce opposite health outcomes.",insight:"Understanding that muscles function as an endocrine organ — releasing beneficial signaling proteins during contraction — provides a compelling biological reason to prioritize resistance and aerobic exercise for brain health, not just physical fitness.",vocab:[{word:"myokine",jp:"マイオカイン（筋肉から分泌されるサイトカイン）"},{word:"secreted",jp:"分泌された"},{word:"BDNF",jp:"脳由来神経栄養因子"},{word:"interleukin-6",jp:"インターロイキン6"},{word:"endocrine",jp:"内分泌の"}]}
+  ]
+};
+
+// Flatten with index
+const ALL_ARTICLES = {};
+['A1','A2','B1'].forEach(lv=>{
+  ALL_ARTICLES[lv]=ARTICLES[lv].map((a,i)=>({...a,id:`${lv}_${i}`,level:lv}));
+});
+
+const PROJECT_ID='graded-reading-51be9';
+const API_KEY='AIzaSyDVWGqyhlssB1C6EHPcQfRKGZA4h9YuxhA';
+const FS_URL=`https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/users`;
+const AUTH_URL=`https://identitytoolkit.googleapis.com/v1/accounts`;
+const DOW=['日','月','火','水','木','金','土'];
+
+let state={level:'A1',history:[],currentArticle:null,streak:0,lastReadDate:null,readDates:[],openedDates:[],totalWords:0,shownIds:[]};
+let currentUser=null;
+let idToken=null;
+let calYear,calMonth;
+
+// ===== GOOGLE SIGN-IN (popup via redirect) =====
+function signInWithGoogle(){
+  const clientId='697153015753-YOUR_CLIENT_ID.apps.googleusercontent.com'; // placeholder
+  // Use Firebase REST API for Google Sign-In
+  const providerUrl=`https://accounts.google.com/o/oauth2/v2/auth`;
+  // Fallback: use signInWithPopup via Google Identity Services
+  google_signin();
+}
+
+// Use Google Identity Services
+function google_signin(){
+  if(typeof google==='undefined'){
+    loadScript('https://accounts.google.com/gsi/client',()=>initGSI());
+  } else { initGSI(); }
+}
+
+function loadScript(src,cb){
+  const s=document.createElement('script');
+  s.src=src;s.onload=cb;document.head.appendChild(s);
+}
+
+function initGSI(){
+  google.accounts.id.initialize({
+    client_id:'697153015753-qmj8k9v2l5n3p6r1x4w0y7z2a8b5c9d1.apps.googleusercontent.com',
+    callback:handleGoogleToken,
+    auto_select:true,
+    cancel_on_tap_outside:false
+  });
+  google.accounts.id.prompt();
+}
+
+async function handleGoogleToken(response){
+  // Exchange Google ID token for Firebase ID token
+  try{
+    const res=await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=${API_KEY}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({postBody:`id_token=${response.credential}&providerId=google.com`,requestUri:'http://localhost',returnIdpCredential:true,returnSecureToken:true})
+    });
+    const data=await res.json();
+    if(data.idToken){
+      idToken=data.idToken;
+      currentUser={email:data.email,uid:data.localId,displayName:data.displayName};
+      localStorage.setItem('dailyread-token',idToken);
+      localStorage.setItem('dailyread-user',JSON.stringify(currentUser));
+      await loadUserState();
+    }
+  }catch(e){
+    console.error('Sign-in error',e);
+    showLoginView();
+  }
+}
+
+async function tryAutoLogin(){
+  const savedToken=localStorage.getItem('dailyread-token');
+  const savedUser=localStorage.getItem('dailyread-user');
+  if(savedToken&&savedUser){
+    // verify token
+    try{
+      const res=await fetch(`${AUTH_URL}:lookup?key=${API_KEY}`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({idToken:savedToken})
+      });
+      const data=await res.json();
+      if(data.users&&data.users.length>0){
+        idToken=savedToken;
+        currentUser=JSON.parse(savedUser);
+        await loadUserState();
+        return;
+      }
+    }catch(e){}
+  }
+  showLoginView();
+}
+
+function showLoginView(){
+  document.getElementById('init-loading').classList.add('hidden');
+  document.getElementById('login-view').classList.remove('hidden');
+  // load GSI for one-tap
+  loadScript('https://accounts.google.com/gsi/client',()=>initGSI());
+}
+
+async function signOut(){
+  localStorage.removeItem('dailyread-token');
+  localStorage.removeItem('dailyread-user');
+  idToken=null;currentUser=null;
+  location.reload();
+}
+
+// ===== FIRESTORE REST =====
+function toFS(obj){
+  function cv(v){
+    if(v===null||v===undefined) return {nullValue:null};
+    if(typeof v==='boolean') return {booleanValue:v};
+    if(typeof v==='number') return Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:v};
+    if(typeof v==='string') return {stringValue:v};
+    if(Array.isArray(v)) return {arrayValue:{values:v.map(cv)}};
+    if(typeof v==='object') return {mapValue:{fields:Object.fromEntries(Object.entries(v).map(([k,val])=>[k,cv(val)]))}};
+    return {stringValue:String(v)};
+  }
+  return {fields:Object.fromEntries(Object.entries(obj).map(([k,v])=>[k,cv(v)]))};
+}
+function fromFS(fields){
+  function pv(v){
+    if('nullValue' in v) return null;
+    if('booleanValue' in v) return v.booleanValue;
+    if('integerValue' in v) return parseInt(v.integerValue);
+    if('doubleValue' in v) return v.doubleValue;
+    if('stringValue' in v) return v.stringValue;
+    if('arrayValue' in v) return (v.arrayValue.values||[]).map(pv);
+    if('mapValue' in v) return Object.fromEntries(Object.entries(v.mapValue.fields||{}).map(([k,val])=>[k,pv(val)]));
+    return null;
+  }
+  return Object.fromEntries(Object.entries(fields).map(([k,v])=>[k,pv(v)]));
+}
+
+async function fsGet(uid){
+  const r=await fetch(`${FS_URL}/${uid}`,{headers:{'Authorization':`Bearer ${idToken}`}});
+  if(r.status===404) return null;
+  if(!r.ok) throw new Error('GET failed');
+  const d=await r.json();
+  return fromFS(d.fields||{});
+}
+async function fsSave(uid,data){
+  const r=await fetch(`${FS_URL}/${uid}`,{method:'PATCH',headers:{'Content-Type':'application/json','Authorization':`Bearer ${idToken}`},body:JSON.stringify(toFS(data))});
+  if(!r.ok) throw new Error('PATCH failed');
+}
+
+// ===== STATE =====
+async function loadUserState(){
+  document.getElementById('login-view').classList.add('hidden');
+  document.getElementById('init-loading').classList.remove('hidden');
+  try{
+    const data=await fsGet(currentUser.uid);
+    if(data) state={...state,...data};
+    setSaveStatus('✅ データ読み込み完了');
+  }catch(e){
+    const local=localStorage.getItem('dailyread-backup');
+    if(local) state={...state,...JSON.parse(local)};
+    setSaveStatus('⚠️ オフライン');
+  }
+  document.getElementById('user-email').textContent=currentUser.email;
+  updateLevelButtons();updateStreakBadge();
+  if(state.currentArticle) showArticle(state.currentArticle);
+  else nextArticle();
+}
+
+async function saveState(){
+  localStorage.setItem('dailyread-backup',JSON.stringify(state));
+  try{
+    await fsSave(currentUser.uid,state);
+    setSaveStatus('✅ 保存済み');
+  }catch(e){
+    setSaveStatus('⚠️ オフライン（ローカル保存）');
+  }
+}
+
+function setSaveStatus(msg){
+  const el=document.getElementById('save-status');
+  el.textContent=msg;
+  setTimeout(()=>{el.textContent='';},3000);
+}
+
+// ===== ARTICLE =====
+function nextArticle(){
+  const pool=ALL_ARTICLES[state.level];
+  if(!state.shownIds) state.shownIds=[];
+  const shown=state.shownIds.filter(id=>id.startsWith(state.level));
+  let unseen=pool.filter(a=>!shown.includes(a.id));
+  if(unseen.length===0){
+    // reset cycle
+    state.shownIds=state.shownIds.filter(id=>!id.startsWith(state.level));
+    unseen=pool;
+  }
+  const article=unseen[Math.floor(Math.random()*unseen.length)];
+  state.shownIds.push(article.id);
+  const iso=todayISO();
+  if(!state.openedDates) state.openedDates=[];
+  if(!state.openedDates.includes(iso)) state.openedDates.push(iso);
+  const wc=[article.title,article.p1,article.p2,article.insight].join(' ').split(/\s+/).filter(Boolean).length;
+  const full={...article,wordCount:wc,date:todayLabel(),iso,done:false};
+  state.currentArticle=full;
+  state.history.unshift(full);
+  if(state.history.length>100) state.history.pop();
+  saveState();
+  showArticle(full);
+}
+
+function showArticle(a){
+  document.getElementById('card-date').textContent=a.date||'';
+  document.getElementById('tag-level').textContent=a.level;
+  document.getElementById('tag-topic').textContent=a.topic;
+  document.getElementById('word-count').textContent=`${a.wordCount} words`;
+  document.getElementById('article-title').textContent=a.title;
+  document.getElementById('article-p1').textContent=a.p1;
+  document.getElementById('article-p2').textContent=a.p2;
+  document.getElementById('article-insight').textContent=a.insight;
+  const grid=document.getElementById('vocab-grid');
+  grid.innerHTML=(a.vocab||[]).map(v=>`<div class="vocab-item"><div class="vocab-word">${v.word}</div><div class="vocab-jp">${v.jp}</div></div>`).join('');
+  setDoneUI(a.done);
+  ['init-loading','login-view'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('article-view').classList.remove('hidden');
+  document.getElementById('btn-done').disabled=false;
+}
+
+function setDoneUI(done){
+  document.getElementById('hanamaru').classList.toggle('show',!!done);
+  document.getElementById('tag-done').classList.toggle('show',!!done);
+  const btn=document.getElementById('btn-done');
+  btn.classList.toggle('completed',!!done);
+  btn.textContent=done?'🌸 読了済み':'🌸 読了！';
+  btn.disabled=!!done;
+}
+
+async function markDone(){
+  const a=state.currentArticle;
+  if(!a||a.done)return;
+  a.done=true;
+  const iso=todayISO();
+  const yest=new Date(Date.now()-86400000).toISOString().slice(0,10);
+  if(!state.readDates) state.readDates=[];
+  if(!state.readDates.includes(iso)){
+    state.readDates.push(iso);
+    state.streak=(state.lastReadDate===yest)?(state.streak||0)+1:1;
+    state.lastReadDate=iso;
+  }
+  state.totalWords=(state.totalWords||0)+a.wordCount;
+  const hi=state.history.findIndex(h=>h.title===a.title&&h.date===a.date);
+  if(hi>=0)state.history[hi].done=true;
+  await saveState();
+  setDoneUI(true);
+  showCelebration();
+  updateStreakBadge();
+}
+
+function showCelebration(){
+  const el=document.getElementById('celebrate');
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),1200);
+}
+
+// ===== HELPERS =====
+function todayISO(){return new Date().toISOString().slice(0,10);}
+function todayLabel(){return new Date().toLocaleDateString('ja-JP');}
+function updateStreakBadge(){document.getElementById('streak-badge').textContent=`🔥 ${state.streak||0}日連続`;}
+function setLevel(lv){state.level=lv;updateLevelButtons();saveState();}
+function updateLevelButtons(){document.querySelectorAll('.lv-btn').forEach(b=>b.classList.toggle('active',b.dataset.lv===state.level));}
+
+// ===== CALENDAR =====
+function toggleCalendar(){
+  const p=document.getElementById('cal-panel');
+  p.classList.toggle('open');
+  if(p.classList.contains('open')){const n=new Date();calYear=n.getFullYear();calMonth=n.getMonth();renderCalendar();}
+}
+function calMove(d){calMonth+=d;if(calMonth<0){calMonth=11;calYear--;}if(calMonth>11){calMonth=0;calYear++;}renderCalendar();}
+function renderCalendar(){
+  const readSet=new Set(state.readDates||[]);
+  const openSet=new Set(state.openedDates||[]);
+  const today=todayISO();
+  document.getElementById('cal-month').textContent=`${calYear}年${calMonth+1}月`;
+  const first=new Date(calYear,calMonth,1).getDay();
+  const days=new Date(calYear,calMonth+1,0).getDate();
+  let html=DOW.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  for(let i=0;i<first;i++)html+=`<div class="cal-day empty"></div>`;
+  for(let d=1;d<=days;d++){
+    const iso=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isRead=readSet.has(iso),isOpen=openSet.has(iso),isToday=iso===today;
+    let cls='cal-day';
+    if(isRead)cls+=' read';else if(isOpen)cls+=' read-partial';else if(isToday)cls+=' today';
+    const oc=(isRead||isOpen)?`onclick="showDayArticle('${iso}')"`:'' ;
+    html+=`<div class="${cls}" ${oc}>${d}</div>`;
+  }
+  document.getElementById('cal-grid').innerHTML=html;
+  const total=(state.readDates||[]).length;
+  const mo=String(calMonth+1).padStart(2,'0');
+  const thisMonth=(state.readDates||[]).filter(d=>d.startsWith(`${calYear}-${mo}`)).length;
+  document.getElementById('cal-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">読了日数</div></div>
+    <div class="stat-card"><div class="stat-num">${thisMonth}</div><div class="stat-label">今月</div></div>
+    <div class="stat-card"><div class="stat-num">${state.streak||0}</div><div class="stat-label">🔥 連続</div></div>
+    <div class="stat-card stat-wide"><div class="stat-num">${(state.totalWords||0).toLocaleString()}</div><div class="stat-label">📖 累計語彙数</div></div>`;
+}
+function showDayArticle(iso){
+  const lbl=new Date(iso+'T00:00:00').toLocaleDateString('ja-JP');
+  const found=state.history.find(a=>a.iso===iso||a.date===lbl);
+  if(found){state.currentArticle=found;showArticle(found);}
+  toggleCalendar();
+}
+
+// ===== HISTORY =====
+function toggleHistory(){
+  const p=document.getElementById('hist-panel');
+  p.classList.toggle('open');
+  if(p.classList.contains('open'))renderHistory();
+}
+function renderHistory(){
+  const list=document.getElementById('history-list');
+  if(!state.history.length){list.innerHTML='<div class="empty-state">まだ記事がありません</div>';return;}
+  list.innerHTML=state.history.map((a,i)=>`
+    <div class="history-item" onclick="loadFromHistory(${i})">
+      <div class="h-hana">${a.done?'🌸':'　'}</div>
+      <div class="h-info"><div class="h-title">${a.title}</div><div class="h-meta">${a.date} · ${a.topic} · ${a.level} · ${a.wordCount} words</div></div>
+    </div>`).join('');
+}
+function loadFromHistory(i){state.currentArticle=state.history[i];showArticle(state.currentArticle);toggleHistory();}
+
+tryAutoLogin();
+</script>
+</body>
+</html>
