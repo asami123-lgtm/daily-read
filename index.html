@@ -167,9 +167,10 @@ header{padding:max(16px,env(safe-area-inset-top)) 20px 0;display:flex;align-item
   <div class="panel-body" id="history-list"></div>
 </div>
 
-  <script src="articles.js"></script>
+<script src="articles.js"></script>
 <script>
-const ARTICLES={
+// ARTICLES は articles.js から読み込まれます
+const _ARTICLES_CHECK = typeof ARTICLES !== 'undefined';
   A1:[
     {topic:"マインドフルネス・心理学",title:"Take a Deep Breath",p1:"Are you feeling stressed? Try this. Stop what you are doing. Take a slow, deep breath. Breathe in for four seconds. Then breathe out for four seconds. Do this three times.",p2:"You will feel calmer. This is called deep breathing. It helps your brain slow down. You can do it anywhere. Try it now!",insight:"Three deep breaths can help your brain feel calm in less than one minute.",vocab:[{word:"stressed",jp:"ストレスを感じている"},{word:"breath",jp:"息、呼吸"},{word:"calm",jp:"落ち着いた"},{word:"breathe",jp:"息をする"}]},
     {topic:"マインドフルネス・心理学",title:"Smile More",p1:"Did you know? Smiling is good for you. When you smile, your brain feels happy. This is true even when you are not happy. A small smile can change your mood.",p2:"Try this today. Look in a mirror. Smile for ten seconds. You may start to feel better. Smiling is free and easy. Do it often!",insight:"Smiling for just ten seconds can help your brain feel a little happier.",vocab:[{word:"smile",jp:"笑顔、微笑む"},{word:"mood",jp:"気分"},{word:"mirror",jp:"鏡"},{word:"often",jp:"よく、しばしば"}]},
